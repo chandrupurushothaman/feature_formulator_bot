@@ -162,6 +162,7 @@ def handle_message(message, say):
 
 
 def process_message_logic(user_id, message_text, say):
+    # This is the most important check: If the user is in a flow, DO NOT use ChatterBot.
     if user_id in user_requirement_flows:
         if message_text.lower() == "cancel":
             del user_requirement_flows[user_id]
@@ -170,9 +171,14 @@ def process_message_logic(user_id, message_text, say):
             continue_requirement_flow(user_id, message_text, say)
         return
 
+    msg_lower = message_text.lower()
     requirement_keywords = ["feature", "idea", "requirement", "enhancement", "we should", "implement", "new feature"]
-    if any(keyword in message_text.lower() for keyword in requirement_keywords):
+    greeting_keywords = ["hi", "hello", "hey", "greetings"]
+
+    if any(keyword in msg_lower for keyword in requirement_keywords):
         start_requirement_flow(user_id, say)
+    elif msg_lower in greeting_keywords:
+        say("Hello! I'm the Feature Formulator bot. I can help you capture a new feature idea or requirement. To get started, just say something like 'new feature' or 'I have an idea'.")
     else:
         bot_response = str(chatbot.get_response(message_text))
         say(bot_response)
@@ -225,7 +231,7 @@ def handle_confirm_post_action(ack, body, say, client):
         say("It looks like we're out of sync or this has already been posted.")
         return
 
-    say("✅ Thank you! Posting this requirement to the backlog channel now...")
+    say("✅ Thank you! Posting this requirement to the feature-requests channel now...")
     Thread(target=post_requirement_to_channel, args=(client, user_id, flow["data"])).start()
     del user_requirement_flows[user_id]
 
@@ -249,3 +255,4 @@ if __name__ == "__main__":
     finally:
         user_requirement_flows.clear()
         print("✅ Shutdown complete.")
+
